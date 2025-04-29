@@ -16,7 +16,7 @@ func BookEvent(c *gin.Context) {
 		return
 	}
 
-	userID := uint(userIDInterface.(float64)) // Extract user ID from context
+	userID := uint(userIDInterface.(float64))
 
 	eventIDParam := c.Param("id")
 	eventID, err := strconv.ParseUint(eventIDParam, 10, 64)
@@ -32,7 +32,6 @@ func BookEvent(c *gin.Context) {
 		return
 	}
 
-	// Check if event has capacity
 	var totalBookings int64
 	db.DB.Model(&models.Booking{}).Where("event_id = ?", eventID).Count(&totalBookings)
 
@@ -41,7 +40,6 @@ func BookEvent(c *gin.Context) {
 		return
 	}
 
-	// Check if user already booked
 	var existingBooking models.Booking
 	bookingResult := db.DB.Where("user_id = ? AND event_id = ?", userID, eventID).First(&existingBooking)
 	if bookingResult.Error == nil {
@@ -49,13 +47,16 @@ func BookEvent(c *gin.Context) {
 		return
 	}
 
-	// Create booking
 	booking := models.Booking{
 		UserID:  userID,
 		EventID: uint(eventID),
 	}
 
-	db.DB.Create(&booking)
+	
+	if err := db.DB.Create(&booking).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not create booking"})
+		return
+	}
 
 	c.JSON(http.StatusCreated, gin.H{"message": "Booking successful", "booking": booking})
 }
@@ -67,7 +68,7 @@ func CancelBooking(c *gin.Context) {
 		return
 	}
 
-	userID := uint(userIDInterface.(float64)) // Extract user ID from context
+	userID := uint(userIDInterface.(float64)) 
 
 	bookingIDParam := c.Param("id")
 	bookingID, err := strconv.ParseUint(bookingIDParam, 10, 64)
@@ -91,4 +92,36 @@ func CancelBooking(c *gin.Context) {
 	db.DB.Delete(&booking)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Booking cancelled successfully"})
+}
+
+func GetBookings(c *gin.Context) {
+	userIDInterface, exists := c.Get("user_id")
+
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+	userID := uint(userIDInterface.(float64))
+
+	var bookings []models.Booking
+	result := db.DB.Where("user_id = ?", userID).Find(&bookings)
+	if result.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not retrieve bookings"})
+	}
+	var response []gin.H
+	for _, booking := range bookings {
+		var event models.Event
+		db.DB.First(&event, booking.EventID)
+
+		response = append(response, gin.H{
+			"booking_id":       booking.ID,
+			"event_id":         event.ID,
+			"event_name":       event.Name,
+			"event_location":   event.Location,
+			"event_start_time": event.StartTime,
+			"event_end_time":   event.EndTime,
+		})
+	}
+	c.JSON(http.StatusOK, gin.H{"my_bookings": response})
+
 }

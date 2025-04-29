@@ -89,6 +89,7 @@ func LoginUser(c *gin.Context) {
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
+		return
 	}
 
 	token, err := utils.GenerateJWT(user.ID)
@@ -181,8 +182,6 @@ func ResetPassword(c *gin.Context) {
 		return
 	}
 
-	// Optional: you can also check if user.OTP == "" to make sure OTP was verified before
-
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
 
 	user.Password = string(hashedPassword)
@@ -190,4 +189,141 @@ func ResetPassword(c *gin.Context) {
 	db.DB.Save(&user)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Password reset successful!"})
+}
+
+func GetProfile(c *gin.Context) {
+	userIDInterface, exists := c.Get("user_id")
+
+	if !exists {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Unauthorized"})
+		return
+	}
+	userID := uint(userIDInterface.(float64))
+
+	var user models.RegisterUser
+	result := db.DB.First(&user, userID)
+
+	if result.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"id":            user.ID,
+		"full_name":     user.FullName,
+		"email":         user.Email,
+		"phone":         user.Phone,
+		"date_of_birth": user.DoB,
+		"verified":      user.Verified,
+		"created_at":    user.CreatedAt,
+	})
+}
+
+func EditProfile(c *gin.Context) {
+	userIDInterface, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+	userID := uint(userIDInterface.(float64))
+
+	var user models.RegisterUser
+	result := db.DB.First(&user, userID)
+	if result.Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	var req struct {
+		FullName string `json:"full_name"`
+		Phone    string `json:"phone"`
+		DoB      string `json:"date_of_birth"` // in ISO format e.g., "2000-01-01"
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if req.FullName != "" {
+		user.FullName = req.FullName
+	}
+	if req.Phone != "" {
+		user.Phone = req.Phone
+	}
+	if req.DoB != "" {
+		dob, err := time.Parse("2006-01-02", req.DoB)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid date format. Use YYYY-MM-DD"})
+			return
+		}
+		user.DoB = dob
+	}
+
+	if err := db.DB.Save(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not update profile"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Profile updated successfully", "profile": gin.H{
+		"full_name":     user.FullName,
+		"phone":         user.Phone,
+		"date_of_birth": user.DoB,
+	}})
+
+}
+
+func ChangePassword(c *gin.Context) {
+	userIDInterface, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+	userID := uint(userIDInterface.(float64))
+
+	var user models.RegisterUser
+	if err := db.DB.First(&user, userID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	var req struct {
+		OldPassword     string `json:"old_password"`
+		NewPassword     string `json:"new_password"`
+		ConfirmPassword string `json:"confirm_password"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.OldPassword)); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Old password is incorrect"})
+		return
+	}
+
+	if req.NewPassword == "" || req.ConfirmPassword == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "New password and confirmation are required"})
+		return
+	}
+
+	if req.NewPassword != req.ConfirmPassword {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Passwords do not match"})
+		return
+	}
+
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
+		return
+	}
+
+	user.Password = string(hashedPassword)
+	if err := db.DB.Save(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update password"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Password changed successfully"})
 }

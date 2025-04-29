@@ -97,7 +97,97 @@ func LoginUser(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"token": token})
+}
 
+func ForgotPassword(c *gin.Context) {
+	var req struct {
+		Email string `json:"email"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	var user models.RegisterUser
+	result := db.DB.Where("email = ?", req.Email).First(&user)
 
-	
+	if result.Error != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No user found with that email"})
+		return
+	}
+
+	otp := utils.GenerateOTP()
+	user.OTP = otp
+	user.OTPExpiresAt = time.Now().Add(10 * time.Minute)
+	db.DB.Save(&user)
+
+	utils.SendEmail(user.Email, "Your Password Reset OTP", "Your OTP code is: "+otp)
+
+	c.JSON(http.StatusOK, gin.H{"message": "Password reset OTP sent to your email."})
+
+}
+
+func VerifyForgotPassword(c *gin.Context) {
+	var req models.VerifyOTP
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var user models.RegisterUser
+	result := db.DB.Where("email = ?", req.Email).First(&user)
+
+	if result.Error != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid email"})
+		return
+	}
+
+	if user.OTP != req.OTP {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid OTP"})
+		return
+	}
+	if time.Now().After(user.OTPExpiresAt) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "OTP expired"})
+		return
+	}
+
+	user.OTP = ""
+	user.OTPExpiresAt = time.Time{}
+
+	db.DB.Save(&user)
+
+	c.JSON(http.StatusOK, gin.H{"message": "OTP verified. You can now reset your password."})
+
+}
+
+func ResetPassword(c *gin.Context) {
+
+	var req models.ResetPassword
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if req.NewPassword != req.ConfirmPassword {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Passwords do not match"})
+		return
+	}
+
+	var user models.RegisterUser
+	result := db.DB.Where("email = ?", req.Email).First(&user)
+
+	if result.Error != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid email"})
+		return
+	}
+
+	// Optional: you can also check if user.OTP == "" to make sure OTP was verified before
+
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+
+	user.Password = string(hashedPassword)
+
+	db.DB.Save(&user)
+
+	c.JSON(http.StatusOK, gin.H{"message": "Password reset successful!"})
 }

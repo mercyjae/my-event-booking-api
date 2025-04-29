@@ -9,7 +9,8 @@ type Event struct {
 	Location    string    `json:"location" binding:"required"`
 	DateTime    time.Time `json:"dateTime" binding:"required"`
 	UserId      int       `json:"userId"`
-	StartTime   time.Time `json:"start_time"`
-	EndTime     time.Time `json:"end_time"`
-	CreatedAt   time.Time
+	StartTime   time.Time    `json:"start_time"`
+	EndTime     time.Time    `json:"end_time"`
+	Capacity     int       `json:"capacity" binding:"required"`
+	CreatedAt   time.Time  
 }

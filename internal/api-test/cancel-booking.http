@@ -1,2 +1,3 @@
-DELETE http://localhost:8080/events/2/register
-authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InRlc3QxMkBleGFtcGxlLmNvbSIsImV4cCI6MTcyOTU5MDUyOSwidXNlcklkIjoyfQ.DM4gmSyj2Fu484E5tJ2c79oRVKGrQF_uk_WiRVAZohM
+DELETE  http://localhost:8080/booking/1/cancel
+content-type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDkxMTY0NTIsInVzZXJfaWQiOjV9.fpbF-rmYw0-CRneN3nvMwq-I92NNUp7BbBh3AFbEO2Q

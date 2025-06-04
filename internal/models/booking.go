@@ -3,8 +3,9 @@ package models
 import "time"
 
 type Booking struct {
-	ID        uint `gorm:"primaryKey"`
-	UserID    uint `json:"user_id"`
-	EventID   uint `json:"event_id"`
-	CreatedAt time.Time
+	ID       uint      `json:"id"`
+	UserID   int       `json:"user_id"`
+	EventID  int       `json:"event_id"`
+	Seats    int       `json:"seats"`
+	BookedAt time.Time `json:"booked_at"`
 }

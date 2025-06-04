@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/mercyjae/event-booking-api/internal/db"
@@ -10,20 +11,31 @@ import (
 )
 
 func BookEvent(c *gin.Context) {
-	userIDInterface, exists := c.Get("user_id")
+	userID, exists := c.Get("user_id")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
+	userIDInt, ok := userID.(int)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID format"})
+		return
+	}
 
-	userID := uint(userIDInterface.(float64))
-
+	//userID := uint(userIDInterface.(float64))
 	eventIDParam := c.Param("id")
-	eventID, err := strconv.ParseUint(eventIDParam, 10, 64)
+	eventID, err := strconv.Atoi(eventIDParam)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid event ID"})
 		return
 	}
+
+	// eventIDParam := c.Param("id")
+	// eventID, err := strconv.ParseUint(eventIDParam, 10, 64)
+	// if err != nil {
+	// 	c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid event ID"})
+	// 	return
+	// }
 
 	var event models.Event
 	result := db.DB.First(&event, eventID)
@@ -48,8 +60,10 @@ func BookEvent(c *gin.Context) {
 	}
 
 	booking := models.Booking{
-		UserID:  userID,
-		EventID: uint(eventID),
+		UserID:   userIDInt,
+		EventID:  eventID,
+		Seats:    1,
+		BookedAt: time.Now(),
 	}
 
 	if err := db.DB.Create(&booking).Error; err != nil {
@@ -61,13 +75,13 @@ func BookEvent(c *gin.Context) {
 }
 
 func CancelBooking(c *gin.Context) {
-	userIDInterface, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
+	//userIDInterface, exists := c.Get("user_id")
+	// if !exists {
+	// 	c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+	// 	return
+	// }
 
-	userID := uint(userIDInterface.(float64))
+	//userID := uint(userIDInterface.(float64))
 
 	bookingIDParam := c.Param("id")
 	bookingID, err := strconv.ParseUint(bookingIDParam, 10, 64)
@@ -83,10 +97,10 @@ func CancelBooking(c *gin.Context) {
 		return
 	}
 
-	if booking.UserID != userID {
-		c.JSON(http.StatusForbidden, gin.H{"error": "You can only cancel your own bookings"})
-		return
-	}
+	// if booking.UserID != userID {
+	// 	c.JSON(http.StatusForbidden, gin.H{"error": "You can only cancel your own bookings"})
+	// 	return
+	// }
 
 	db.DB.Delete(&booking)
 
@@ -94,13 +108,13 @@ func CancelBooking(c *gin.Context) {
 }
 
 func GetBookings(c *gin.Context) {
-	userIDInterface, exists := c.Get("user_id")
-
+	//userIDInterface, exists := c.Get("user_id")
+	userID, exists := c.Get("user_id")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
-	userID := uint(userIDInterface.(float64))
+	//userID := uint(userIDInterface.(float64))
 
 	var bookings []models.Booking
 	result := db.DB.Where("user_id = ?", userID).Find(&bookings)

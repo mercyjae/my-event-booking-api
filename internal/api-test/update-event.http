@@ -1,11 +1,14 @@
 
-PUT http://localhost:8080/events/5
+PUT http://localhost:8080/events/3
 content-type: application/json
-authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6InRlc3Q5QGV4YW1wbGUuY29tIiwiZXhwIjoxNzI5NTc4ODUxLCJ1c2VySWQiOjN9.2gZ8qU25VpdkjZppFukFtIxnvJFIRoAYXnEmL6Ydszc
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDkxMTY0NTIsInVzZXJfaWQiOjV9.fpbF-rmYw0-CRneN3nvMwq-I92NNUp7BbBh3AFbEO2Q
 
 {
-    "name": "Updated test events2",
-    "description": "An updated test events",
-    "location": "A test location",
-    "dateTime": "2025-01-01T15:30:00Z"
-}
+    "name": "Stella Afrika",
+    "description": "A web conference for web3 people",
+    "location_address": "Victoria Island",
+    "location_venue": "Zonetech Park",
+    "capacity":60,
+    "event_date": "2025-01-01"
+ 
+}   

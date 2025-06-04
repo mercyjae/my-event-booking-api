@@ -29,6 +29,7 @@ func UserRoutes(r *gin.Engine) {
 		auth.GET("/events", handlers.ListEvents)
 		auth.GET("/events/:id", handlers.GetEvent)
 		auth.DELETE("/events/:id", handlers.DeleteEvent)
+		auth.PUT("/events/:id", handlers.UpdateEvent)
 		auth.POST("/events/:id/book", handlers.BookEvent)
 		auth.DELETE("/booking/:id/cancel", handlers.CancelBooking)
 		auth.GET("/bookings", handlers.GetBookings)

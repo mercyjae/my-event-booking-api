@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/mercyjae/event-booking-api/internal/db"
@@ -205,16 +204,22 @@ func ResetPassword(c *gin.Context) {
 }
 
 func GetProfile(c *gin.Context) {
-	userIDInterface, exists := c.Get("user_id")
+	userID, exists := c.Get("user_id")
 
 	if !exists {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Unauthorized"})
 		return
 	}
-	userID := uint(userIDInterface.(float64))
+	uid, ok := userID.(int)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user ID in token"})
+		return
+	}
+
+	//	userID := uint(userIDInterface.(float64))
 
 	var user models.RegisterUser
-	result := db.DB.First(&user, userID)
+	result := db.DB.First(&user, uid)
 
 	if result.Error != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
@@ -222,26 +227,25 @@ func GetProfile(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"id":            user.ID,
-		"full_name":     user.FullName,
-		"email":         user.Email,
-		"phone":         user.Phone,
-		"date_of_birth": user.DoB,
-		//"verified":      user.Verified,
+		"id":         user.ID,
+		"full_name":  user.FullName,
+		"email":      user.Email,
+		"phone":      user.Phone,
 		"created_at": user.CreatedAt,
 	})
 }
 
 func EditProfile(c *gin.Context) {
-	userIDInterface, exists := c.Get("user_id")
+	userID, exists := c.Get("user_id")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
-	userID := uint(userIDInterface.(float64))
+	uid := userID.(int)
+	//userID := uint(userIDInterface.(float64))
 
 	var user models.RegisterUser
-	result := db.DB.First(&user, userID)
+	result := db.DB.First(&user, uid)
 	if result.Error != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 		return
@@ -250,7 +254,7 @@ func EditProfile(c *gin.Context) {
 	var req struct {
 		FullName string `json:"full_name"`
 		Phone    string `json:"phone"`
-		DoB      string `json:"date_of_birth"` // in ISO format e.g., "2000-01-01"
+		// DoB      string `json:"date_of_birth"` // in ISO format e.g., "2000-01-01"
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -263,23 +267,22 @@ func EditProfile(c *gin.Context) {
 	if req.Phone != "" {
 		user.Phone = req.Phone
 	}
-	if req.DoB != "" {
-		dob, err := time.Parse("2006-01-02", req.DoB)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid date format. Use YYYY-MM-DD"})
-			return
-		}
-		user.DoB = dob
-	}
+	// if req.DoB != "" {
+	// 	dob, err := time.Parse("2006-01-02", req.DoB)
+	// 	if err != nil {
+	// 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid date format. Use YYYY-MM-DD"})
+	// 		return
+	// 	}
+	// 	user.DoB = dob
+	// }
 
 	if err := db.DB.Save(&user).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not update profile"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Profile updated successfully", "profile": gin.H{
-		"full_name":     user.FullName,
-		"phone":         user.Phone,
-		"date_of_birth": user.DoB,
+		"full_name": user.FullName,
+		"phone":     user.Phone,
 	}})
 
 }

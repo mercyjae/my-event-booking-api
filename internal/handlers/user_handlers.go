@@ -93,7 +93,7 @@ func LoginUser(c *gin.Context) {
 	result := db.DB.Where("email = ?", req.Email).First(&user)
 
 	if result.Error != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid emailss or password"})
 		return
 	}
 	// if !user.Verified {

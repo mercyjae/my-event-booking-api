@@ -52,7 +52,6 @@ func BookEvent(c *gin.Context) {
 		EventID: uint(eventID),
 	}
 
-	
 	if err := db.DB.Create(&booking).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not create booking"})
 		return
@@ -68,7 +67,7 @@ func CancelBooking(c *gin.Context) {
 		return
 	}
 
-	userID := uint(userIDInterface.(float64)) 
+	userID := uint(userIDInterface.(float64))
 
 	bookingIDParam := c.Param("id")
 	bookingID, err := strconv.ParseUint(bookingIDParam, 10, 64)
@@ -114,12 +113,12 @@ func GetBookings(c *gin.Context) {
 		db.DB.First(&event, booking.EventID)
 
 		response = append(response, gin.H{
-			"booking_id":       booking.ID,
-			"event_id":         event.ID,
-			"event_name":       event.Name,
-			"event_location":   event.Location,
-			"event_start_time": event.StartTime,
-			"event_end_time":   event.EndTime,
+			"booking_id":     booking.ID,
+			"event_id":       event.ID,
+			"event_name":     event.Name,
+			"event_location": event.LocationAddress,
+			// "event_start_time": event.StartTime,
+			// "event_end_time":   event.EndTime,
 		})
 	}
 	c.JSON(http.StatusOK, gin.H{"my_bookings": response})

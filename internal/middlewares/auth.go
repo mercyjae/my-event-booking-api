@@ -3,6 +3,7 @@ package middlewares
 import (
 	"net/http"
 	"strings"
+
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 )
@@ -39,9 +40,16 @@ func AuthMiddleware() gin.HandlerFunc {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token claims"})
 			return
 		}
+		userIdFloat, ok := claims["user_id"].(float64)
+		if !ok {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "user_id not found in token"})
+			return
+		}
 
-	
-		c.Set("user_id", claims["user_id"])
+		userId := int(userIdFloat)
+		c.Set("user_id", userId)
+
+		//c.Set("user_id", claims["user_id"])
 
 		c.Next()
 	}

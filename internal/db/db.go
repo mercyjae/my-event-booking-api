@@ -21,4 +21,4 @@ func ConnectDatabase() {
 	DB = database
 
 	database.AutoMigrate(&models.RegisterUser{}, &models.Event{}, &models.Booking{}, &models.VerifyOTP{}, &models.ResetPassword{})
-}
+ }

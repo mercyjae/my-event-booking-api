@@ -10,9 +10,9 @@ type RegisterUser struct {
 	Password     string    `json:"password"`
 	CreatedAt    time.Time `json:"created_at"`
 	DoB          time.Time `json:"date_of_birth"`
-	Verified     bool      `gorm:"default:false"`
-	OTP          string    `gorm:"size:6"`
-	OTPExpiresAt time.Time
+	// Verified     bool      `gorm:"default:false"`
+	// OTP          string    `gorm:"size:6"`
+	// OTPExpiresAt time.Time
 }
 
 type VerifyOTP struct {

@@ -1,0 +1,40 @@
+{{define "subject"}}Hello Email from Event Booking!{{end}}
+{{define "plainBody"}}
+Hi {{.name}},
+
+Here's your token to activate your account:
+
+Token: {{.activationToken}}
+
+Please note that this is a one-time use token and it will expire by {{.expiryDate}}.
+
+Thanks, The Recall-King Team
+
+{{end}}
+
+{{define "htmlBody"}}
+<!doctype html>
+<html>
+
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+
+<body>
+    <p>Hi {{.name}},</p>
+    <p>Here's your token to activate your account:</p>
+    <p>
+    <pre>
+            <code style="font-size: 1.2em; font-weight: bold;">
+                Token: {{.activationToken}}
+            </code>
+        </pre>
+    </p>
+    <p>Please note that this is a one-time use token and it will expire by {{.expiryDate}}.</p>
+    <p>Thanks,</p>
+    <p>The Recall-King Team</p>
+</body>
+
+</html>
+{{end}}

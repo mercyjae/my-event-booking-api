@@ -1,0 +1,10 @@
+POST http://localhost:8080/register
+content-type: application/json
+
+{
+    "email": "anu@yopmail.com",
+    "password": "Anu20",
+    "phone": "08023456555",
+    "full_name": "Anu Joy"
+
+}

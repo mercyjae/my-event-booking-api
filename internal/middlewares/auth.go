@@ -3,7 +3,6 @@ package middlewares
 import (
 	"net/http"
 	"strings"
-
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 )
@@ -41,7 +40,7 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// Optional: Extract user ID and put in context
+	
 		c.Set("user_id", claims["user_id"])
 
 		c.Next()

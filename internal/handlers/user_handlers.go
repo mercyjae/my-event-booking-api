@@ -20,52 +20,65 @@ func RegisterUser(c *gin.Context) {
 	}
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 
-	otp := utils.GenerateOTP()
+	//	otp := utils.GenerateOTP()
 
 	user := models.RegisterUser{
-		FullName:     req.FullName,
-		Email:        req.Email,
-		Password:     string(hashedPassword),
-		Verified:     false,
-		OTP:          otp,
-		OTPExpiresAt: time.Now().Add(10 * time.Minute),
+		FullName: req.FullName,
+		Email:    req.Email,
+		Phone:    req.Phone,
+		Password: string(hashedPassword),
+		// Verified:     false,
+		// OTP:          otp,
+		// OTPExpiresAt: time.Now().Add(10 * time.Minute),
 	}
 	db.DB.Create(&user)
-	utils.SendEmail(user.Email, "Verify your email", "Your OTP code is: "+otp)
-	c.JSON(http.StatusCreated, gin.H{"message": "Registration success"})
+	// data := map[string]any{
+	// 	"name":            req.FullName,
+	// 	"expiryDate":      user.OTPExpiresAt.Format("Monday, 02 January 2006 at 15:04"),
+	// 	"activationToken": user.OTP}
+
+	// // err := app.Mailer.Send("dolagookun@icloud.com", "reset-token.html", data)
+	// err := MailerInstance.Send(user.Email, "reset-token.html", data)
+	// //	err := mailer.Mailer.Send(user.Email, "reset-token.html", data)
+	// if err != nil {
+	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	// 	//	app.Logger.Error(err.Error(), nil)
+	// }
+	//utils.SendEmail(user.Email, "Verify your email", "Your OTP code is: "+otp)
+	c.JSON(http.StatusCreated, gin.H{"message": "Registration successful"})
 }
 
-func VerifyOTP(c *gin.Context) {
-	var req models.VerifyOTP
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
+// func VerifyOTP(c *gin.Context) {
+// 	var req models.VerifyOTP
+// 	if err := c.ShouldBindJSON(&req); err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+// 		return
+// 	}
 
-	var user models.RegisterUser
-	result := db.DB.Where("email = ?", req.Email).First(&user)
+// 	var user models.RegisterUser
+// 	result := db.DB.Where("email = ?", req.Email).First(&user)
 
-	if result.Error != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "User not found"})
-		return
-	}
+// 	if result.Error != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": "User not found"})
+// 		return
+// 	}
 
-	if user.OTP != req.OTP {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid OTP"})
-		return
-	}
+// 	if user.OTP != req.OTP {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid OTP"})
+// 		return
+// 	}
 
-	if time.Now().After(user.OTPExpiresAt) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "OTP expired"})
-		return
-	}
+// 	if time.Now().After(user.OTPExpiresAt) {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": "OTP expired"})
+// 		return
+// 	}
 
-	user.Verified = true
-	user.OTP = ""
-	db.DB.Save(&user)
+// 	user.Verified = true
+// 	user.OTP = ""
+// 	db.DB.Save(&user)
 
-	c.JSON(http.StatusOK, gin.H{"message": "Email verified successfully!"})
-}
+// 	c.JSON(http.StatusOK, gin.H{"message": "Email verified successfully!"})
+// }
 
 func LoginUser(c *gin.Context) {
 
@@ -83,10 +96,10 @@ func LoginUser(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
 		return
 	}
-	if !user.Verified {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Email not verified"})
-		return
-	}
+	// if !user.Verified {
+	// 	c.JSON(http.StatusUnauthorized, gin.H{"error": "Email not verified"})
+	// 	return
+	// }
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
 		return
@@ -116,12 +129,12 @@ func ForgotPassword(c *gin.Context) {
 		return
 	}
 
-	otp := utils.GenerateOTP()
-	user.OTP = otp
-	user.OTPExpiresAt = time.Now().Add(10 * time.Minute)
+	// otp := utils.GenerateOTP()
+	// user.OTP = otp
+	// user.OTPExpiresAt = time.Now().Add(10 * time.Minute)
 	db.DB.Save(&user)
 
-	utils.SendEmail(user.Email, "Your Password Reset OTP", "Your OTP code is: "+otp)
+	//utils.SendEmail(user.Email, "Your Password Reset OTP", "Your OTP code is: "+otp)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Password reset OTP sent to your email."})
 
@@ -143,17 +156,17 @@ func VerifyForgotPassword(c *gin.Context) {
 		return
 	}
 
-	if user.OTP != req.OTP {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid OTP"})
-		return
-	}
-	if time.Now().After(user.OTPExpiresAt) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "OTP expired"})
-		return
-	}
+	// if user.OTP != req.OTP {
+	// 	c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid OTP"})
+	// 	return
+	// }
+	// if time.Now().After(user.OTPExpiresAt) {
+	// 	c.JSON(http.StatusBadRequest, gin.H{"error": "OTP expired"})
+	// 	return
+	// }
 
-	user.OTP = ""
-	user.OTPExpiresAt = time.Time{}
+	// user.OTP = ""
+	// user.OTPExpiresAt = time.Time{}
 
 	db.DB.Save(&user)
 
@@ -214,8 +227,8 @@ func GetProfile(c *gin.Context) {
 		"email":         user.Email,
 		"phone":         user.Phone,
 		"date_of_birth": user.DoB,
-		"verified":      user.Verified,
-		"created_at":    user.CreatedAt,
+		//"verified":      user.Verified,
+		"created_at": user.CreatedAt,
 	})
 }
 
@@ -296,7 +309,6 @@ func ChangePassword(c *gin.Context) {
 		return
 	}
 
-
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.OldPassword)); err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Old password is incorrect"})
 		return
@@ -311,7 +323,6 @@ func ChangePassword(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Passwords do not match"})
 		return
 	}
-
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
 	if err != nil {

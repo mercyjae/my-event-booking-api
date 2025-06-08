@@ -2,10 +2,12 @@ package handlers
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/mercyjae/event-booking-api/internal/db"
 	"github.com/mercyjae/event-booking-api/internal/models"
+	"github.com/mercyjae/event-booking-api/pkg/mailer"
 	"github.com/mercyjae/event-booking-api/pkg/utils"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -128,11 +130,27 @@ func ForgotPassword(c *gin.Context) {
 		return
 	}
 
-	// otp := utils.GenerateOTP()
-	// user.OTP = otp
-	// user.OTPExpiresAt = time.Now().Add(10 * time.Minute)
+	otp := utils.GenerateOTP()
+	user.OTP = otp
+	user.OTPExpiresAt = time.Now().Add(10 * time.Minute)
 	db.DB.Save(&user)
+	//app.background(func() {
+	data := map[string]any{
+		"name":       user.FullName,
+		"expiryDate": user.OTPExpiresAt,
+		// otp.Expiry.Format("Monday, 02 January 2006 at 15:04"),
+		"activationToken": otp}
 
+	// err := app.Mailer.Send("dolagookun@icloud.com", "reset-token.html", data)
+	m := mailer.Newi()
+	err := m.Send(user.Email, "token.html", data)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		//	app.Logger.Error(err.Error(), nil)
+		return
+	}
+
+	//})
 	//utils.SendEmail(user.Email, "Your Password Reset OTP", "Your OTP code is: "+otp)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Password reset OTP sent to your email."})
@@ -155,17 +173,17 @@ func VerifyForgotPassword(c *gin.Context) {
 		return
 	}
 
-	// if user.OTP != req.OTP {
-	// 	c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid OTP"})
-	// 	return
-	// }
-	// if time.Now().After(user.OTPExpiresAt) {
-	// 	c.JSON(http.StatusBadRequest, gin.H{"error": "OTP expired"})
-	// 	return
-	// }
+	if user.OTP != req.OTP {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid OTP"})
+		return
+	}
+	if time.Now().After(user.OTPExpiresAt) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "OTP expired"})
+		return
+	}
 
-	// user.OTP = ""
-	// user.OTPExpiresAt = time.Time{}
+	user.OTP = ""
+	user.OTPExpiresAt = time.Time{}
 
 	db.DB.Save(&user)
 

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"html/template"
 	"os"
+	"strconv"
 
 	"time"
 
@@ -15,12 +16,27 @@ import (
 
 // this directive is important for embed
 //
-
+//go:embed templates/*
 var templateFS embed.FS
 
 type Mailer struct {
-	dialer *mail.Dialer
-	sender string
+	Dialer *mail.Dialer
+	Sender string
+}
+
+func Newi() Mailer {
+
+	smtpHost := os.Getenv("SMTP_HOST")
+	smtpPort := os.Getenv("SMTP_PORT")
+	smtpUsername := os.Getenv("SMTP_USERNAME")
+	smtpPassword := os.Getenv("SMTP_PASSWORD")
+	smtpSender := os.Getenv("SMTP_SENDER")
+	port, _ := strconv.Atoi(smtpPort)
+	dialer := mail.NewDialer(smtpHost, port, smtpUsername, smtpPassword)
+	dialer.Timeout = 5 * time.Second
+	// dialer.SSL = true
+
+	return Mailer{Dialer: dialer, Sender: smtpSender}
 }
 
 func New(host string, port int, username, password, sender string) Mailer {
@@ -28,7 +44,7 @@ func New(host string, port int, username, password, sender string) Mailer {
 	dialer := mail.NewDialer(host, port, username, password)
 	dialer.Timeout = 5 * time.Second
 
-	return Mailer{dialer: dialer, sender: sender}
+	return Mailer{Dialer: dialer, Sender: sender}
 }
 
 func (m Mailer) Send(recipient, templateFile string, data any) error {
@@ -54,7 +70,7 @@ func (m Mailer) Send(recipient, templateFile string, data any) error {
 	}
 	msg := mail.NewMessage()
 	msg.SetHeader("To", recipient)
-	msg.SetHeader("From", m.sender)
+	msg.SetHeader("From", m.Sender)
 	msg.SetHeader("Subject", subject.String())
 	msg.SetBody("text/plain", plainBody.String())
 	msg.AddAlternative("text/html", htmlBody.String())
@@ -62,7 +78,7 @@ func (m Mailer) Send(recipient, templateFile string, data any) error {
 	//logger := logger.GetLogger(logger.Options{})
 	// defer logger.Sync()
 	for i := 1; i <= 3; i++ {
-		err = m.dialer.DialAndSend(msg)
+		err = m.Dialer.DialAndSend(msg)
 		if nil == err {
 			fmt.Println("Email Sent", nil)
 			//	logger.Info("Email Sent", nil)

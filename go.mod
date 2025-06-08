@@ -4,6 +4,8 @@ go 1.23.1
 
 require golang.org/x/exp v0.0.0-20250408133849-7e4ce0ab07d0
 
+require github.com/mattn/go-sqlite3 v1.14.28 // indirect
+
 require (
 	github.com/bytedance/sonic v1.11.6 // indirect
 	github.com/bytedance/sonic/loader v0.1.1 // indirect

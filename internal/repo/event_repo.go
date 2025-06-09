@@ -59,7 +59,7 @@ func GetAllEvents() ([]domain.Event, error) {
 	for rows.Next() {
 		var event domain.Event
 
-		err := rows.Scan(&event.ID, &event.Name, &event.Description, &event.LocationVenue, &event.LocationAddress, &event.EventDate, &event.UserId)
+		err := rows.Scan(&event.ID, &event.Name, &event.Description, &event.LocationVenue, &event.LocationAddress, &event.EventDate, &event.UserId, &event.Capacity)
 		if err != nil {
 			return nil, err
 		}
@@ -68,4 +68,45 @@ func GetAllEvents() ([]domain.Event, error) {
 
 	return events, nil
 
+}
+
+func GetEventById(id int64) (*domain.Event, error) {
+	query := "SELECT * FROM events WHERE id  = ?"
+	row := db.DBB.QueryRow(query, id)
+
+	var event domain.Event
+	err := row.Scan(&event.ID, &event.Name, &event.Description, &event.LocationVenue, &event.LocationAddress, &event.EventDate, &event.UserId, &event.Capacity)
+	if err != nil {
+		return nil, err
+	}
+	return &event, nil
+}
+
+func Update(event *domain.Event) error {
+	query := `
+UPDATE events
+SET name = ?, description = ?, location_venue = ?, location_address = ?, event_date = ?, user_id = ?, capacity = ?
+WHERE id = ?
+`
+	stmt, err := db.DBB.Prepare(query)
+
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+	_, err = stmt.Exec(&event.ID, &event.Name, &event.Description, &event.LocationVenue, &event.LocationAddress, &event.EventDate, &event.UserId, &event.Capacity)
+	return err
+}
+
+func Delete(event *domain.Event) error {
+	query := "DELETE FROM events WHERE id = ?"
+
+	stmt, err := db.DBB.Prepare(query)
+
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+	_, err = stmt.Exec(event.ID)
+	return err
 }

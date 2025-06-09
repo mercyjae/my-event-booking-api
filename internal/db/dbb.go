@@ -2,6 +2,7 @@ package db
 
 import (
 	"database/sql"
+	"log"
 
 	//	"fmt"
 
@@ -65,18 +66,20 @@ func createTable() {
 		panic("Could not create events table")
 	}
 
-	createRegistrationsTable := `
-	CREATE TABLE IF NOT EXISTS registrations (
-	id INTEGER PRIMARY KEY AUTOINCREMENT,
-	event_id INTEGER,
-	user_id INTEGER,
-	FOREIGN KEY(event_id) REFERENCES events(id),
-	FOREIGN KEY(user_id) REFERENCES users(id)
-	)
+	createBookingsTable := `
+	CREATE TABLE IF NOT EXISTS bookings (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		user_id INTEGER NOT NULL,
+		event_id INTEGER NOT NULL,
+		seats INTEGER NOT NULL,
+		booked_at DATETIME NOT NULL,
+		FOREIGN KEY(user_id) REFERENCES users(id),
+		FOREIGN KEY(event_id) REFERENCES events(id)
+	);
 	`
-	_, err = DBB.Exec(createRegistrationsTable)
-
+	_, err = DBB.Exec(createBookingsTable)
 	if err != nil {
-		panic("Could not create registrations table")
+		log.Fatal("Failed to create bookings table:", err)
 	}
+
 }

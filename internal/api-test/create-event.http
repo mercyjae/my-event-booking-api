@@ -4,11 +4,11 @@ content-type: application/json
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDk1Mzg1OTIsInVzZXJfaWQiOjF9.OXWYY_21GQikJ_ltwpk4sHn8HpAha0wGUpxRARdNQYg
 
 {
-    "name": "Web3 Afrika",
-    "description": "A web conference for web3 people",
+    "name": "Flutterbytes Afrika",
+    "description": "A flutter conference for dart people",
     "location_address": "Victoria Island",
     "location_venue": "Zonetech Park",
-    "capacity":20,
+    "capacity":70,
     "event_date": "2025-01-01T15:30:00.000Z"
  
 }   

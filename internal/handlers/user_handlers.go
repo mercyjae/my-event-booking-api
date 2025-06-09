@@ -2,37 +2,54 @@ package handlers
 
 import (
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/mercyjae/event-booking-api/internal/db"
-	"github.com/mercyjae/event-booking-api/internal/models"
-	"github.com/mercyjae/event-booking-api/pkg/mailer"
+	"github.com/mercyjae/event-booking-api/internal/domain"
+	"github.com/mercyjae/event-booking-api/internal/dto"
+	"github.com/mercyjae/event-booking-api/internal/repo"
 	"github.com/mercyjae/event-booking-api/pkg/utils"
-	"golang.org/x/crypto/bcrypt"
 )
 
 func RegisterUser(c *gin.Context) {
-	var req models.RegisterUser
+	var req dto.RegisterUserRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	//hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 
 	//	otp := utils.GenerateOTP()
 
-	user := models.RegisterUser{
+	user := domain.User{
 		FullName: req.FullName,
 		Email:    req.Email,
 		Phone:    req.Phone,
-		Password: string(hashedPassword),
+		//Password: string(hashedPassword),
 		// Verified:     false,
 		// OTP:          otp,
 		// OTPExpiresAt: time.Now().Add(10 * time.Minute),
 	}
-	db.DB.Create(&user)
+	exists, err := repo.IsEmailTaken(user.Email)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Something went wrong while checking email"})
+		return
+	}
+	if exists {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Email already in use"})
+		return
+	}
+	err = user.Password.Set(req.Password)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err, "devError": err.Error()})
+		return
+	}
+	err = repo.SaveUser(&user)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Could not save user", "devError": err.Error()})
+		return
+	}
+	//db.DB.Create(&user)
 	// data := map[string]any{
 	// 	"name":            req.FullName,
 	// 	"expiryDate":      user.OTPExpiresAt.Format("Monday, 02 January 2006 at 15:04"),
@@ -83,28 +100,43 @@ func RegisterUser(c *gin.Context) {
 
 func LoginUser(c *gin.Context) {
 
-	var req models.LoginUser
+	var req dto.LoginUserRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	var user models.RegisterUser
-	result := db.DB.Where("email = ?", req.Email).First(&user)
-
-	if result.Error != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid emailss or password"})
+	//var user dto.RegisterUserRequest
+	user, err := repo.GetUserByEmail(req.Email)
+	if err != nil {
+		if err.Error() == "user not found" {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch user"})
+		}
 		return
 	}
+	match, err := user.Password.Matches(req.Password)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Password validation failed"})
+		return
+	}
+	if !match {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid password"})
+		return
+	}
+	//result := db.DBB.Where("email = ?", req.Email).First(&user)
+
 	// if !user.Verified {
 	// 	c.JSON(http.StatusUnauthorized, gin.H{"error": "Email not verified"})
 	// 	return
 	// }
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
-		return
-	}
+	//match, err := user.Password.Matches(req.Password)
+	// if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
+	// 	c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email or password"})
+	// 	return
+	// }
 
 	token, err := utils.GenerateJWT(user.ID)
 	if err != nil {
@@ -122,169 +154,169 @@ func ForgotPassword(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	var user models.RegisterUser
-	result := db.DB.Where("email = ?", req.Email).First(&user)
+	// var user dto.RegisterUserRequest
+	// result := db.DB.Where("email = ?", req.Email).First(&user)
 
-	if result.Error != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "No user found with that email"})
-		return
-	}
+	// if result.Error != nil {
+	// 	c.JSON(http.StatusBadRequest, gin.H{"error": "No user found with that email"})
+	// 	return
+	// }
 
-	otp := utils.GenerateOTP()
-	user.OTP = otp
-	user.OTPExpiresAt = time.Now().Add(10 * time.Minute)
-	db.DB.Save(&user)
-	//app.background(func() {
-	data := map[string]any{
-		"name":       user.FullName,
-		"expiryDate": user.OTPExpiresAt,
-		// otp.Expiry.Format("Monday, 02 January 2006 at 15:04"),
-		"activationToken": otp}
+	// otp := utils.GenerateOTP()
+	// user.OTP = otp
+	// user.OTPExpiresAt = time.Now().Add(10 * time.Minute)
+	// db.DB.Save(&user)
+	// //app.background(func() {
+	// data := map[string]any{
+	// 	"name":       user.FullName,
+	// 	"expiryDate": user.OTPExpiresAt,
+	// 	// otp.Expiry.Format("Monday, 02 January 2006 at 15:04"),
+	// 	"activationToken": otp}
 
-	// err := app.Mailer.Send("dolagookun@icloud.com", "reset-token.html", data)
-	m := mailer.Newi()
-	err := m.Send(user.Email, "token.html", data)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		//	app.Logger.Error(err.Error(), nil)
-		return
-	}
+	// // err := app.Mailer.Send("dolagookun@icloud.com", "reset-token.html", data)
+	// m := mailer.Newi()
+	// err := m.Send(user.Email, "token.html", data)
+	// if err != nil {
+	// 	c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	// 	//	app.Logger.Error(err.Error(), nil)
+	// 	return
+	// }
 
-	//})
-	//utils.SendEmail(user.Email, "Your Password Reset OTP", "Your OTP code is: "+otp)
+	// //})
+	// //utils.SendEmail(user.Email, "Your Password Reset OTP", "Your OTP code is: "+otp)
 
-	c.JSON(http.StatusOK, gin.H{"message": "Password reset OTP sent to your email."})
+	// c.JSON(http.StatusOK, gin.H{"message": "Password reset OTP sent to your email."})
 
 }
 
 func VerifyForgotPassword(c *gin.Context) {
-	var req models.VerifyOTP
+	//var req models.VerifyOTP
 
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
+	// if err := c.ShouldBindJSON(&req); err != nil {
+	// 	c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	// 	return
+	// }
 
-	var user models.RegisterUser
-	result := db.DB.Where("email = ?", req.Email).First(&user)
+	// var user models.RegisterUser
+	// result := db.DB.Where("email = ?", req.Email).First(&user)
 
-	if result.Error != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid email"})
-		return
-	}
+	// if result.Error != nil {
+	// 	c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid email"})
+	// 	return
+	// }
 
-	if user.OTP != req.OTP {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid OTP"})
-		return
-	}
-	if time.Now().After(user.OTPExpiresAt) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "OTP expired"})
-		return
-	}
+	// if user.OTP != req.OTP {
+	// 	c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid OTP"})
+	// 	return
+	// }
+	// if time.Now().After(user.OTPExpiresAt) {
+	// 	c.JSON(http.StatusBadRequest, gin.H{"error": "OTP expired"})
+	// 	return
+	// }
 
-	user.OTP = ""
-	user.OTPExpiresAt = time.Time{}
+	// user.OTP = ""
+	// user.OTPExpiresAt = time.Time{}
 
-	db.DB.Save(&user)
+	// db.DB.Save(&user)
 
-	c.JSON(http.StatusOK, gin.H{"message": "OTP verified. You can now reset your password."})
+	// c.JSON(http.StatusOK, gin.H{"message": "OTP verified. You can now reset your password."})
 
 }
 
 func ResetPassword(c *gin.Context) {
 
-	var req models.ResetPassword
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
+	// var req models.ResetPassword
+	// if err := c.ShouldBindJSON(&req); err != nil {
+	// 	c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	// 	return
+	// }
 
-	if req.NewPassword != req.ConfirmPassword {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Passwords do not match"})
-		return
-	}
+	// if req.NewPassword != req.ConfirmPassword {
+	// 	c.JSON(http.StatusBadRequest, gin.H{"error": "Passwords do not match"})
+	// 	return
+	// }
 
-	var user models.RegisterUser
-	result := db.DB.Where("email = ?", req.Email).First(&user)
+	// var user models.RegisterUser
+	// result := db.DB.Where("email = ?", req.Email).First(&user)
 
-	if result.Error != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid email"})
-		return
-	}
+	// if result.Error != nil {
+	// 	c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid email"})
+	// 	return
+	// }
 
-	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+	// hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
 
-	user.Password = string(hashedPassword)
+	// user.Password = string(hashedPassword)
 
-	db.DB.Save(&user)
+	// db.DB.Save(&user)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Password reset successful!"})
 }
 
 func GetProfile(c *gin.Context) {
-	userID, exists := c.Get("user_id")
+	//	userID, exists := c.Get("user_id")
 
-	if !exists {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Unauthorized"})
-		return
-	}
-	uid, ok := userID.(int)
-	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user ID in token"})
-		return
-	}
+	// if !exists {
+	// 	c.JSON(http.StatusBadRequest, gin.H{"error": "Unauthorized"})
+	// 	return
+	// }
+	// uid, ok := userID.(int)
+	// if !ok {
+	// 	c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid user ID in token"})
+	// 	return
+	// }
 
-	//	userID := uint(userIDInterface.(float64))
+	// //	userID := uint(userIDInterface.(float64))
 
-	var user models.RegisterUser
-	result := db.DB.First(&user, uid)
+	// var user models.RegisterUser
+	// result := db.DB.First(&user, uid)
 
-	if result.Error != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
-		return
-	}
+	// if result.Error != nil {
+	// 	c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+	// 	return
+	// }
 
-	c.JSON(http.StatusOK, gin.H{
-		"id":         user.ID,
-		"full_name":  user.FullName,
-		"email":      user.Email,
-		"phone":      user.Phone,
-		"created_at": user.CreatedAt,
-	})
+	// c.JSON(http.StatusOK, gin.H{
+	// 	"id":         user.ID,
+	// 	"full_name":  user.FullName,
+	// 	"email":      user.Email,
+	// 	"phone":      user.Phone,
+	// 	"created_at": user.CreatedAt,
+	// })
 }
 
 func EditProfile(c *gin.Context) {
-	userID, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
-	uid := userID.(int)
-	//userID := uint(userIDInterface.(float64))
+	// userID, exists := c.Get("user_id")
+	// if !exists {
+	// 	c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+	// 	return
+	// }
+	// uid := userID.(int)
+	// //userID := uint(userIDInterface.(float64))
 
-	var user models.RegisterUser
-	result := db.DB.First(&user, uid)
-	if result.Error != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
-		return
-	}
+	// var user models.RegisterUser
+	// result := db.DB.First(&user, uid)
+	// if result.Error != nil {
+	// 	c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+	// 	return
+	// }
 
-	var req struct {
-		FullName string `json:"full_name"`
-		Phone    string `json:"phone"`
-		// DoB      string `json:"date_of_birth"` // in ISO format e.g., "2000-01-01"
-	}
+	// var req struct {
+	// 	FullName string `json:"full_name"`
+	// 	Phone    string `json:"phone"`
+	// 	// DoB      string `json:"date_of_birth"` // in ISO format e.g., "2000-01-01"
+	// }
 
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	if req.FullName != "" {
-		user.FullName = req.FullName
-	}
-	if req.Phone != "" {
-		user.Phone = req.Phone
-	}
+	// if err := c.ShouldBindJSON(&req); err != nil {
+	// 	c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	// 	return
+	// }
+	// if req.FullName != "" {
+	// 	user.FullName = req.FullName
+	// }
+	// if req.Phone != "" {
+	// 	user.Phone = req.Phone
+	// }
 	// if req.DoB != "" {
 	// 	dob, err := time.Parse("2006-01-02", req.DoB)
 	// 	if err != nil {
@@ -294,68 +326,68 @@ func EditProfile(c *gin.Context) {
 	// 	user.DoB = dob
 	// }
 
-	if err := db.DB.Save(&user).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not update profile"})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"message": "Profile updated successfully", "profile": gin.H{
-		"full_name": user.FullName,
-		"phone":     user.Phone,
-	}})
+	// if err := db.DB.Save(&user).Error; err != nil {
+	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not update profile"})
+	// 	return
+	// }
+	// c.JSON(http.StatusOK, gin.H{"message": "Profile updated successfully", "profile": gin.H{
+	// 	"full_name": user.FullName,
+	// 	"phone":     user.Phone,
+	// }})
 
 }
 
 func ChangePassword(c *gin.Context) {
-	userIDInterface, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
-	userID := uint(userIDInterface.(float64))
+	// userIDInterface, exists := c.Get("user_id")
+	// if !exists {
+	// 	c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+	// 	return
+	// }
+	//userID := uint(userIDInterface.(float64))
 
-	var user models.RegisterUser
-	if err := db.DB.First(&user, userID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
-		return
-	}
+	// var user models.RegisterUser
+	// if err := db.DB.First(&user, userID).Error; err != nil {
+	// 	c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+	// 	return
+	// }
 
-	var req struct {
-		OldPassword     string `json:"old_password"`
-		NewPassword     string `json:"new_password"`
-		ConfirmPassword string `json:"confirm_password"`
-	}
+	// var req struct {
+	// 	OldPassword     string `json:"old_password"`
+	// 	NewPassword     string `json:"new_password"`
+	// 	ConfirmPassword string `json:"confirm_password"`
+	// }
 
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
+	// if err := c.ShouldBindJSON(&req); err != nil {
+	// 	c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	// 	return
+	// }
 
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.OldPassword)); err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Old password is incorrect"})
-		return
-	}
+	// if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.OldPassword)); err != nil {
+	// 	c.JSON(http.StatusUnauthorized, gin.H{"error": "Old password is incorrect"})
+	// 	return
+	// }
 
-	if req.NewPassword == "" || req.ConfirmPassword == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "New password and confirmation are required"})
-		return
-	}
+	// if req.NewPassword == "" || req.ConfirmPassword == "" {
+	// 	c.JSON(http.StatusBadRequest, gin.H{"error": "New password and confirmation are required"})
+	// 	return
+	// }
 
-	if req.NewPassword != req.ConfirmPassword {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Passwords do not match"})
-		return
-	}
+	// if req.NewPassword != req.ConfirmPassword {
+	// 	c.JSON(http.StatusBadRequest, gin.H{"error": "Passwords do not match"})
+	// 	return
+	// }
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
-		return
-	}
+	// hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+	// if err != nil {
+	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
+	// 	return
+	// }
 
-	user.Password = string(hashedPassword)
-	if err := db.DB.Save(&user).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update password"})
-		return
-	}
+	// user.Password = string(hashedPassword)
+	// if err := db.DB.Save(&user).Error; err != nil {
+	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update password"})
+	// 	return
+	// }
 
 	c.JSON(http.StatusOK, gin.H{"message": "Password changed successfully"})
 }

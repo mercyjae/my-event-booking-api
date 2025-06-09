@@ -6,11 +6,14 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/mercyjae/event-booking-api/internal/db"
+	"github.com/mercyjae/event-booking-api/internal/domain"
+	"github.com/mercyjae/event-booking-api/internal/dto"
 	"github.com/mercyjae/event-booking-api/internal/models"
+	"github.com/mercyjae/event-booking-api/internal/repo"
 )
 
 func CreateEvent(c *gin.Context) {
-	var req models.Event
+	var req dto.EventRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -18,7 +21,7 @@ func CreateEvent(c *gin.Context) {
 	}
 	userId := c.GetInt("user_id")
 
-	event := models.Event{
+	event := domain.Event{
 		Name:            req.Name,
 		Description:     req.Description,
 		LocationAddress: req.LocationAddress,
@@ -30,18 +33,30 @@ func CreateEvent(c *gin.Context) {
 		UserId:   userId,
 	}
 
-	db.DB.Create(&event)
+	//event.UserId = int(userId)
+	err := repo.SaveEvent(&event)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Could not create events, Try again later", "devError": err.Error()})
+		return
+	}
 
 	c.JSON(http.StatusCreated, gin.H{"message": "Event created successfully", "event": event})
 
 }
 
 func ListEvents(c *gin.Context) {
-	var events []models.Event
-	db.DB.Find(&events)
 
-	c.JSON(http.StatusOK, gin.H{"events": events})
+	events, err := repo.GetAllEvents()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Could not fetch events, Try again later", "devError": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, events)
 }
+
+//c.JSON(http.StatusOK, gin.H{"events": events})
+//}
 
 func GetEvent(c *gin.Context) {
 	id := c.Param("id")

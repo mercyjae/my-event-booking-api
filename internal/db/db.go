@@ -3,7 +3,6 @@ package db
 import (
 	"log"
 
-	"github.com/mercyjae/event-booking-api/internal/models"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -21,5 +20,5 @@ func ConnectDatabase() {
 	}
 	DB = database
 
-	database.AutoMigrate(&models.RegisterUser{}, &models.Event{}, &models.Booking{}, &models.VerifyOTP{}, &models.ResetPassword{})
+	//database.AutoMigrate(&models.RegisterUser{}, &models.Event{}, &models.Booking{}, &models.VerifyOTP{}, &models.ResetPassword{})
 }

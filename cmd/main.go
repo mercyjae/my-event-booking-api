@@ -30,7 +30,8 @@ func main() {
 		smtp["smtp_sender"],
 	)
 	r := gin.Default()
-	db.ConnectDatabase()
+	db.InitDB()
+	//db.ConnectDatabase()
 	routes.UserRoutes(r)
 
 	r.Run(":8080")

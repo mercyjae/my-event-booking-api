@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -129,6 +130,7 @@ func LoginUser(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid password"})
 		return
 	}
+	fmt.Println("👤 Stored password in DB:", user.Password)
 	//result := db.DBB.Where("email = ?", req.Email).First(&user)
 
 	// if !user.Verified {
@@ -251,8 +253,9 @@ func VerifyForgotPassword(c *gin.Context) {
 
 func ResetPassword(c *gin.Context) {
 	var req dto.ResetPassword
+
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "devError": err.Error()})
 		return
 	}
 
@@ -273,3 +276,28 @@ func ResetPassword(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Password reset successful!"})
 }
+
+// func ResetPassword(c *gin.Context) {
+// 	var req dto.ResetPassword
+// 	if err := c.ShouldBindJSON(&req); err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+// 		return
+// 	}
+
+// 	if req.NewPassword != req.ConfirmPassword {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": "Passwords do not match"})
+// 		return
+// 	}
+
+// 	err := repo.ResetPasswordByEmail(req.Email, req.NewPassword)
+// 	if err != nil {
+// 		if err.Error() == "user not found" {
+// 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid email"})
+// 			return
+// 		}
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to reset password", "devError": err.Error()})
+// 		return
+// 	}
+
+// 	c.JSON(http.StatusOK, gin.H{"message": "Password reset successful!"})
+// }

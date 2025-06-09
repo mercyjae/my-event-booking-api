@@ -89,7 +89,9 @@ func GetUserByEmail(email string) (*domain.User, error) {
 
 func ResetPasswordByEmail(email, newPassword string) error {
 	var userID int
-	query := `SELECT id FROM users WHERE email = ?`
+
+	// Normalize email comparison
+	query := `SELECT id FROM users WHERE TRIM(LOWER(email)) = TRIM(LOWER(?))`
 	err := db.DBB.QueryRow(query, email).Scan(&userID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -104,13 +106,48 @@ func ResetPasswordByEmail(email, newPassword string) error {
 	}
 
 	updateQuery := `UPDATE users SET password = ? WHERE id = ?`
-	_, err = db.DBB.Exec(updateQuery, string(hashedPassword), userID)
+	result, err := db.DBB.Exec(updateQuery, hashedPassword, userID)
 	if err != nil {
 		return err
+	}
+	fmt.Println("🔐 New hashed password:", hashedPassword)
+	fmt.Println("🔐 New hashed password:", string(hashedPassword))
+
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if affected == 0 {
+		return errors.New("no rows updated")
 	}
 
 	return nil
 }
+
+// func ResetPasswordByEmail(email, newPassword string) error {
+// 	var userID int
+// 	query := `SELECT id FROM users WHERE email = ?`
+// 	err := db.DBB.QueryRow(query, email).Scan(&userID)
+// 	if err != nil {
+// 		if errors.Is(err, sql.ErrNoRows) {
+// 			return errors.New("user not found")
+// 		}
+// 		return err
+// 	}
+
+// 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	updateQuery := `UPDATE users SET password = ? WHERE id = ?`
+// 	_, err = db.DBB.Exec(updateQuery, string(hashedPassword), userID)
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	return nil
+// }
 
 func GetUserByID(userID int) (*domain.User, error) {
 	var user domain.User
@@ -146,5 +183,19 @@ func UpdateUserProfile(userID int, fullName string, phone string) error {
 	// Update query
 	updateQuery := `UPDATE users SET full_name = ?, phone = ? WHERE id = ?`
 	_, err = db.DBB.Exec(updateQuery, fullName, phone, userID)
+	return err
+}
+
+func GetUserPasswordHash(userID int) (string, error) {
+	var password string
+	query := `SELECT password FROM users WHERE id = ?`
+	err := db.DBB.QueryRow(query, userID).Scan(&password)
+	return password, err
+}
+
+// UpdateUserPassword updates the user password in the DB
+func UpdateUserPassword(userID int, hashedPassword string) error {
+	query := `UPDATE users SET password = ? WHERE id = ?`
+	_, err := db.DBB.Exec(query, hashedPassword, userID)
 	return err
 }

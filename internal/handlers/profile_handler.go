@@ -6,7 +6,9 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/mercyjae/event-booking-api/internal/dto"
 	"github.com/mercyjae/event-booking-api/internal/repo"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func GetProfile(c *gin.Context) {
@@ -52,7 +54,6 @@ func EditProfile(c *gin.Context) {
 	var req struct {
 		FullName string `json:"full_name"`
 		Phone    string `json:"phone"`
-		
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -77,4 +78,56 @@ func EditProfile(c *gin.Context) {
 			"phone":     req.Phone,
 		},
 	})
+}
+
+func ChangePassword(c *gin.Context) {
+	userIDInterface, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+	userID := userIDInterface.(int)
+
+	var req dto.ChangePassword
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// 🔐 Fetch current password hash
+	currentHash, err := repo.GetUserPasswordHash(userID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found", "devError": err.Error()})
+		return
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(currentHash), []byte(req.OldPassword)); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Old password is incorrect"})
+		return
+	}
+
+	if req.NewPassword == "" || req.ConfirmPassword == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "New password and confirmation are required"})
+		return
+	}
+	if req.NewPassword != req.ConfirmPassword {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Passwords do not match"})
+		return
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
+		return
+	}
+
+	// 💾 Save to DB
+	err = repo.UpdateUserPassword(userID, string(hashedPassword))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update password", "devError": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Password changed successfully"})
 }

@@ -35,7 +35,7 @@ func UserRoutes(r *gin.Engine) {
 		auth.GET("/bookings", handlers.GetBookings)
 		auth.GET("/profile", handlers.GetProfile)
 		auth.PUT("/profile/edit", handlers.EditProfile)
-		auth.PUT("/change-password", handlers.ChangePassword)
+		// auth.PUT("/change-password", handlers.ChangePassword)
 	}
 
 }

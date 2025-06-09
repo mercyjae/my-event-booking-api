@@ -16,3 +16,9 @@ type LoginUserResponse struct {
 	// RefreshToken          string    `json:"refresh_token"`
 	// RefreshTokenExpiresAt time.Time `json:"refresh_token_expires_at"`
 }
+
+type ResetPassword struct {
+	Email           string `json:"email"`
+	NewPassword     string `json:"new_password"`
+	ConfirmPassword string `json:"confirm_password"`
+}

@@ -1,10 +1,10 @@
 
 PUT http://localhost:8080/profile/edit
 content-type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDkxMTY0NTIsInVzZXJfaWQiOjV9.fpbF-rmYw0-CRneN3nvMwq-I92NNUp7BbBh3AFbEO2Q
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDk1Mzg1OTIsInVzZXJfaWQiOjF9.OXWYY_21GQikJ_ltwpk4sHn8HpAha0wGUpxRARdNQYg
 
 {
     "full_name": "Stella Afrika",
-    "phone": "09035373737",
-    "email": "anu20@yopmail.com" 
+    "phone": "09035373737"
+   // "email": "anu20@yopmail.com" 
 }   

@@ -1,13 +1,12 @@
 package handlers
 
 import (
+	"database/sql"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/mercyjae/event-booking-api/internal/db"
 	"github.com/mercyjae/event-booking-api/internal/dto"
-	"github.com/mercyjae/event-booking-api/internal/models"
 	"github.com/mercyjae/event-booking-api/internal/repo"
 )
 
@@ -117,34 +116,22 @@ func BookEvent(c *gin.Context) {
 }
 
 func CancelBooking(c *gin.Context) {
-	//userIDInterface, exists := c.Get("user_id")
-	// if !exists {
-	// 	c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-	// 	return
-	// }
-
-	//userID := uint(userIDInterface.(float64))
-
 	bookingIDParam := c.Param("id")
-	bookingID, err := strconv.ParseUint(bookingIDParam, 10, 64)
+	bookingID, err := strconv.ParseInt(bookingIDParam, 10, 64)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid booking ID"})
 		return
 	}
 
-	var booking models.Booking
-	result := db.DB.First(&booking, bookingID)
-	if result.Error != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+	err = repo.DeleteBookingByID(bookingID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to cancel booking"})
+		}
 		return
 	}
-
-	// if booking.UserID != userID {
-	// 	c.JSON(http.StatusForbidden, gin.H{"error": "You can only cancel your own bookings"})
-	// 	return
-	// }
-
-	db.DB.Delete(&booking)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Booking cancelled successfully"})
 }
@@ -169,35 +156,3 @@ func GetBookings(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"my_bookings": bookings})
 }
-
-// func GetBookings(c *gin.Context) {
-// 	//userIDInterface, exists := c.Get("user_id")
-// 	userID, exists := c.Get("user_id")
-// 	if !exists {
-// 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-// 		return
-// 	}
-// 	//userID := uint(userIDInterface.(float64))
-
-// 	var bookings []models.Booking
-// 	result := db.DB.Where("user_id = ?", userID).Find(&bookings)
-// 	if result.Error != nil {
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not retrieve bookings"})
-// 	}
-// 	var response []gin.H
-// 	for _, booking := range bookings {
-// 		var event models.Event
-// 		db.DB.First(&event, booking.EventID)
-
-// 		response = append(response, gin.H{
-// 			"booking_id":     booking.ID,
-// 			"event_id":       event.ID,
-// 			"event_name":     event.Name,
-// 			"event_location": event.LocationAddress,
-// 			// "event_start_time": event.StartTime,
-// 			// "event_end_time":   event.EndTime,
-// 		})
-// 	}
-// 	c.JSON(http.StatusOK, gin.H{"my_bookings": response})
-
-// }

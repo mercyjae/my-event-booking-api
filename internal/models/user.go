@@ -19,18 +19,18 @@ package models
 // 	DoB      time.Time `json:"date_of_birth"`
 // }
 
-type VerifyOTP struct {
-	Email string `json:"email"`
-	OTP   string `json:"otp"`
-}
+// type VerifyOTP struct {
+// 	Email string `json:"email"`
+// 	OTP   string `json:"otp"`
+// }
 
-type LoginUser struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
+// type LoginUser struct {
+// 	Email    string `json:"email"`
+// 	Password string `json:"password"`
+// }
 
-type ResetPassword struct {
-	Email           string `json:"email"`
-	NewPassword     string `json:"new_password"`
-	ConfirmPassword string `json:"confirm_password"`
-}
+// type ResetPassword struct {
+// 	Email           string `json:"email"`
+// 	NewPassword     string `json:"new_password"`
+// 	ConfirmPassword string `json:"confirm_password"`
+// }

@@ -100,3 +100,27 @@ func GetUserBookings(userID int) ([]gin.H, error) {
 
 	return bookings, nil
 }
+
+func DeleteBookingByID(bookingID int64) error {
+	query := "DELETE FROM bookings WHERE id = ?"
+	stmt, err := db.DBB.Prepare(query)
+	if err != nil {
+		return fmt.Errorf("failed to prepare delete statement: %w", err)
+	}
+	defer stmt.Close()
+
+	result, err := stmt.Exec(bookingID)
+	if err != nil {
+		return fmt.Errorf("failed to execute delete: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+	if rowsAffected == 0 {
+		return sql.ErrNoRows
+	}
+
+	return nil
+}

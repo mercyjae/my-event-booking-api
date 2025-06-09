@@ -26,6 +26,20 @@ func InitDB() {
 }
 
 func createTable() {
+	// _, err := DBB.Exec(`DROP TABLE IF EXISTS users`)
+	// if err != nil {
+	// 	log.Fatal("❌ Failed to drop users table:", err)
+	// }
+
+	// _, err = DBB.Exec(`DROP TABLE IF EXISTS events`)
+	// if err != nil {
+	// 	log.Fatal("❌ Failed to drop events table:", err)
+	// }
+
+	// _, err = DBB.Exec(`DROP TABLE IF EXISTS users`)
+	// if err != nil {
+	// 	log.Fatal("❌ Failed to drop users table:", err)
+	// }
 
 	createUsersTable := `
 
@@ -34,7 +48,10 @@ func createTable() {
 	full_name TEXT NOT NULL,
 	email TEXT NOT NULL UNIQUE,
 	phone TEXT NOT NULL,
-	password TEXT NOT NULL
+	password TEXT NOT NULL,
+	otp TEXT,
+	otp_expires_at DATETIME
+	
 
 	)
 	`

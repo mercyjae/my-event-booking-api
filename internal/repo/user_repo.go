@@ -7,6 +7,7 @@ import (
 
 	"github.com/mercyjae/event-booking-api/internal/db"
 	"github.com/mercyjae/event-booking-api/internal/domain"
+	"golang.org/x/crypto/bcrypt"
 )
 
 //import "github.com/mercyjae/event-booking-api/internal/db"
@@ -84,4 +85,66 @@ func GetUserByEmail(email string) (*domain.User, error) {
 
 	user.Password = domain.Password{Hash: []byte(hashedPassword)}
 	return &user, nil
+}
+
+func ResetPasswordByEmail(email, newPassword string) error {
+	var userID int
+	query := `SELECT id FROM users WHERE email = ?`
+	err := db.DBB.QueryRow(query, email).Scan(&userID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return errors.New("user not found")
+		}
+		return err
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
+	updateQuery := `UPDATE users SET password = ? WHERE id = ?`
+	_, err = db.DBB.Exec(updateQuery, string(hashedPassword), userID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func GetUserByID(userID int) (*domain.User, error) {
+	var user domain.User
+	query := `SELECT id, full_name, email, phone FROM users WHERE id = ?`
+
+	err := db.DBB.QueryRow(query, userID).Scan(
+		&user.ID,
+		&user.FullName,
+		&user.Email,
+		&user.Phone,
+		//&user.CreatedAt,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil // user not found
+		}
+		return nil, fmt.Errorf("failed to fetch user: %w", err)
+	}
+	fmt.Println("Running query for userID:", userID)
+
+	return &user, nil
+}
+
+func UpdateUserProfile(userID int, fullName string, phone string) error {
+	// Optional: check user exists
+	var id int
+	checkQuery := `SELECT id FROM users WHERE id = ?`
+	err := db.DBB.QueryRow(checkQuery, userID).Scan(&id)
+	if err != nil {
+		return err // could be sql.ErrNoRows
+	}
+
+	// Update query
+	updateQuery := `UPDATE users SET full_name = ?, phone = ? WHERE id = ?`
+	_, err = db.DBB.Exec(updateQuery, fullName, phone, userID)
+	return err
 }

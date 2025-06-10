@@ -211,7 +211,7 @@ func LoginUser(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not generate token"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"token": token})
+	c.JSON(http.StatusOK, gin.H{"message": "Login successful", "token": token})
 }
 
 func ForgotPassword(c *gin.Context) {
@@ -261,7 +261,7 @@ func ForgotPassword(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Password reset OTP sent to your email."})
+	c.JSON(http.StatusOK, gin.H{"message": "Password reset OTP has been sent to your email."})
 }
 
 func VerifyForgotPassword(c *gin.Context) {

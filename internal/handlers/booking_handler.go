@@ -90,5 +90,5 @@ func GetBookings(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"my_bookings": bookings})
+	c.JSON(http.StatusOK, gin.H{"message": "Bookings retrieved successful", "my_bookings": bookings})
 }

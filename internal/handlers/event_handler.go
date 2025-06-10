@@ -51,7 +51,7 @@ func ListEvents(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "Could not fetch events, Try again later", "devError": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"events": events})
+	c.JSON(http.StatusOK, gin.H{"message": "Events retrieved sucessfully", "events": events})
 	//c.JSON(http.StatusOK, events)
 }
 
@@ -80,7 +80,7 @@ func GetEvent(c *gin.Context) {
 	// 	return
 	// }
 
-	c.JSON(http.StatusOK, gin.H{"event": event})
+	c.JSON(http.StatusOK, gin.H{"message": "Event retrieved successfully", "event": event})
 }
 
 func DeleteEvent(c *gin.Context) {

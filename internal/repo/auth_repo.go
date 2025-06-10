@@ -10,17 +10,15 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-//import "github.com/mercyjae/event-booking-api/internal/db"
-
 func SaveUser(u *domain.User) error {
-	query := "INSERT INTO users(full_name, email, password, phone) VALUES (?, ?, ?, ?)"
+	query := "INSERT INTO users(full_name, email, password, phone, otp, otp_expires_at, verified) VALUES (?, ?, ?, ?,?,?,?)"
 	stmt, err := db.DBB.Prepare(query)
 	if err != nil {
 		return fmt.Errorf("prepare insert user failed: %w", err)
 	}
 	defer stmt.Close()
 
-	result, err := stmt.Exec(u.FullName, u.Email, u.Password.Hash, u.Phone)
+	result, err := stmt.Exec(u.FullName, u.Email, u.Password.Hash, u.Phone, u.OTP, u.OTPExpiresAt, u.Verified)
 	if err != nil {
 		return fmt.Errorf("exec insert user failed: %w", err)
 	}
@@ -43,32 +41,6 @@ func IsEmailTaken(email string) (bool, error) {
 	return count > 0, nil
 }
 
-// func GetUserByEmail(u *domain.User) error {
-// 	fmt.Println("Searching for email:", u.Email)
-// 	query := "SELECT id, password FROM users WHERE email = ?"
-// 	row := db.DBB.QueryRow(query, u.Email)
-// 	var retrievedPassword string
-// 	err := row.Scan(&u.ID, &retrievedPassword)
-
-// 	// if err != nil {
-// 	// 	return errors.New("Credentials Invalid")
-// 	// }
-// 	if err == sql.ErrNoRows {
-// 		// Return an error if the email is not found in the database
-// 		return errors.New("user not found")
-// 	} else if err != nil {
-// 		// Return any other error encountered during the query
-// 		return err
-// 	}
-// 	// match, err := doai..Matches(retrievedPassword)
-// 	// passwordIsValid := utils.CheckPasswordHash(u.Password, retrievedPassword)
-
-// 	// if !passwordIsValid {
-// 	// 	return errors.New("Credentials Invalid")
-// 	// }
-
-//		return nil
-//	}
 func GetUserByEmail(email string) (*domain.User, error) {
 	query := "SELECT id, email, password FROM users WHERE email = ?"
 	row := db.DBB.QueryRow(query, email)
@@ -148,54 +120,3 @@ func ResetPasswordByEmail(email, newPassword string) error {
 
 // 	return nil
 // }
-
-func GetUserByID(userID int) (*domain.User, error) {
-	var user domain.User
-	query := `SELECT id, full_name, email, phone FROM users WHERE id = ?`
-
-	err := db.DBB.QueryRow(query, userID).Scan(
-		&user.ID,
-		&user.FullName,
-		&user.Email,
-		&user.Phone,
-		//&user.CreatedAt,
-	)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, nil // user not found
-		}
-		return nil, fmt.Errorf("failed to fetch user: %w", err)
-	}
-	fmt.Println("Running query for userID:", userID)
-
-	return &user, nil
-}
-
-func UpdateUserProfile(userID int, fullName string, phone string) error {
-	// Optional: check user exists
-	var id int
-	checkQuery := `SELECT id FROM users WHERE id = ?`
-	err := db.DBB.QueryRow(checkQuery, userID).Scan(&id)
-	if err != nil {
-		return err // could be sql.ErrNoRows
-	}
-
-	// Update query
-	updateQuery := `UPDATE users SET full_name = ?, phone = ? WHERE id = ?`
-	_, err = db.DBB.Exec(updateQuery, fullName, phone, userID)
-	return err
-}
-
-func GetUserPasswordHash(userID int) (string, error) {
-	var password string
-	query := `SELECT password FROM users WHERE id = ?`
-	err := db.DBB.QueryRow(query, userID).Scan(&password)
-	return password, err
-}
-
-// UpdateUserPassword updates the user password in the DB
-func UpdateUserPassword(userID int, hashedPassword string) error {
-	query := `UPDATE users SET password = ? WHERE id = ?`
-	_, err := db.DBB.Exec(query, hashedPassword, userID)
-	return err
-}

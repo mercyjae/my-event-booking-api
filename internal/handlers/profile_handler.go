@@ -35,12 +35,16 @@ func GetProfile(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"id":        user.ID,
-		"full_name": user.FullName,
-		"email":     user.Email,
-		"phone":     user.Phone,
-		//"created_at": user.CreatedAt,
+		"message": "Profile retrieved successfully",
+		"profile": gin.H{
+			"id":         user.ID,
+			"full_name":  user.FullName,
+			"email":      user.Email,
+			"phone":      user.Phone,
+			"created_at": user.CreatedAt,
+		},
 	})
+
 }
 
 func EditProfile(c *gin.Context) {
@@ -130,4 +134,16 @@ func ChangePassword(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Password changed successfully"})
+}
+
+func ListUsers(c *gin.Context) {
+	users, err := repo.GetAllUsers()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch users", "devError": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Users retrieved successfully",
+		"users":   users})
+
 }

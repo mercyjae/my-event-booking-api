@@ -49,8 +49,9 @@ func createTable() {
 	email TEXT NOT NULL UNIQUE,
 	phone TEXT NOT NULL,
 	password TEXT NOT NULL,
-	otp TEXT,
-	otp_expires_at DATETIME
+	otp TEXT NOT NULL,
+	otp_expires_at DATETIME,
+	verified bool DEFAULT 0
 	
 
 	)

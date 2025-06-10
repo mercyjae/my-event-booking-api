@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"database/sql"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -30,7 +32,7 @@ func RegisterUser(c *gin.Context) {
 		Email:    req.Email,
 		Phone:    req.Phone,
 		//Password: string(hashedPassword),
-		// Verified:     false,
+		Verified: false,
 		// OTP:          otp,
 		// OTPExpiresAt: time.Now().Add(10 * time.Minute),
 	}
@@ -48,36 +50,97 @@ func RegisterUser(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err, "devError": err.Error()})
 		return
 	}
+	otp := utils.GenerateOTP()
+	user.OTP = otp
+	user.OTPExpiresAt = time.Now().Add(10 * time.Minute)
 	err = repo.SaveUser(&user)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "Could not save user", "devError": err.Error()})
 		return
 	}
-	//db.DB.Create(&user)
-	// data := map[string]any{
-	// 	"name":            req.FullName,
-	// 	"expiryDate":      user.OTPExpiresAt.Format("Monday, 02 January 2006 at 15:04"),
-	// 	"activationToken": user.OTP}
 
-	// // err := app.Mailer.Send("dolagookun@icloud.com", "reset-token.html", data)
-	// err := MailerInstance.Send(user.Email, "reset-token.html", data)
-	// //	err := mailer.Mailer.Send(user.Email, "reset-token.html", data)
-	// if err != nil {
-	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-	// 	//	app.Logger.Error(err.Error(), nil)
-	// }
-	//utils.SendEmail(user.Email, "Verify your email", "Your OTP code is: "+otp)
-	c.JSON(http.StatusCreated, gin.H{"message": "Registration successful"})
+	// otpExpiry := time.Now().Add(10 * time.Minute)
+	data := map[string]any{
+		"name":            user.FullName,
+		"expiryDate":      user.OTPExpiresAt,
+		"activationToken": user.OTP,
+	}
+	mailerService := mailer.Newi()
+	err = mailerService.Send(user.Email, "token.html", data)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to send email"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"message": "OTP has sent to your email"})
+}
+
+func VerifyOTP(c *gin.Context) {
+	var req struct {
+		Email string `json:"email"`
+		OTP   string `json:"otp"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var user domain.User
+	query := `SELECT id, full_name, email, phone, password, otp, otp_expires_at, verified 
+	          FROM users 
+	          WHERE TRIM(LOWER(email)) = TRIM(LOWER(?))`
+
+	err := db.DBB.QueryRow(query, req.Email).Scan(
+		&user.ID,
+		&user.FullName,
+		&user.Email,
+		&user.Phone,
+		&user.Password.Hash,
+		&user.OTP,
+		&user.OTPExpiresAt,
+		&user.Verified,
+	)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "User not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch user", "devError": err.Error()})
+		return
+	}
+
+	if user.OTP != req.OTP {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid OTP"})
+		return
+	}
+
+	if time.Now().After(user.OTPExpiresAt) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "OTP expired"})
+		return
+	}
+
+	updateQuery := `UPDATE users SET verified = ?, otp = '', otp_expires_at = NULL WHERE id = ?`
+	_, err = db.DBB.Exec(updateQuery, true, user.ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update verification status", "devError": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Email verified successfully!"})
 }
 
 // func VerifyOTP(c *gin.Context) {
-// 	var req models.VerifyOTP
+// 	var req struct {
+// 		Email string `json:"email"`
+// 		OTP   string `json:"otp"`
+// 	}
 // 	if err := c.ShouldBindJSON(&req); err != nil {
 // 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 // 		return
 // 	}
 
-// 	var user models.RegisterUser
+// 	var user domain.User
 // 	result := db.DB.Where("email = ?", req.Email).First(&user)
 
 // 	if result.Error != nil {

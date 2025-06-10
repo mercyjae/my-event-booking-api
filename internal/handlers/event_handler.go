@@ -84,26 +84,6 @@ func GetEvent(c *gin.Context) {
 }
 
 func DeleteEvent(c *gin.Context) {
-	// idParam := c.Param("id")
-	// id, err := strconv.ParseUint(idParam, 10, 64)
-	// if err != nil {
-	// 	c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid event ID"})
-	// 	return
-	// }
-
-	// var event models.Event
-	// result := db.DB.First(&event, uint(id))
-	// if result.Error != nil {
-	// 	c.JSON(http.StatusNotFound, gin.H{"error": "Event not found"})
-	// 	return
-	// }
-
-	// if err := db.DB.Delete(&event).Error; err != nil {
-	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete event"})
-	// 	return
-	// }
-
-	// c.JSON(http.StatusOK, gin.H{"message": "Event deleted successfully"})
 
 	eventId, err := strconv.ParseInt(c.Param("id"), 10, 64)
 
@@ -149,17 +129,12 @@ func UpdateEvent(context *gin.Context) {
 		return
 	}
 	if event.UserId != int(userId) {
-		context.JSON(http.StatusUnauthorized, gin.H{"message": "Not authorized to update event",
-			"currentUser": userId,
-			"eventOwner":  event.UserId})
+		context.JSON(http.StatusUnauthorized, gin.H{"message": "Not authorized to update event"}) // "currentUser": userId,
+		// "eventOwner":  event.UserId
+
 		return
 	}
 
-	// userId := context.GetInt("user_id")
-	// if event.UserId != userId {
-	// 	context.JSON(http.StatusUnauthorized, gin.H{"message": "Not authorized to update event"})
-	// 	return
-	// }
 	var req dto.UpdateEventRequest
 	err = context.ShouldBindJSON(&req)
 

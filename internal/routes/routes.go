@@ -16,11 +16,12 @@ func UserRoutes(r *gin.Engine) {
 		c.JSON(200, gin.H{"message": "pong"})
 	})
 	r.POST("/register", handlers.RegisterUser)
-	//r.POST("/verify-otp", handlers.VerifyOTP)
+	r.POST("/verify-otp", handlers.VerifyOTP)
 	r.POST("/login", handlers.LoginUser)
 	r.POST("/verify-forgot-password", handlers.VerifyForgotPassword)
 	r.POST("/forgot-password", handlers.ForgotPassword)
 	r.POST("/reset-password", handlers.ResetPassword)
+	r.GET("/users", handlers.ListUsers)
 
 	auth := r.Group("/")
 	auth.Use(middlewares.AuthMiddleware())

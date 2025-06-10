@@ -1,0 +1,3 @@
+GET http://localhost:8070/users
+content-type: application/json
+

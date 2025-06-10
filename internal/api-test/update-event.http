@@ -1,14 +1,14 @@
 
-PUT http://localhost:8080/events/3
+PUT http://localhost:8070/events/6
 content-type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDkxMTY0NTIsInVzZXJfaWQiOjV9.fpbF-rmYw0-CRneN3nvMwq-I92NNUp7BbBh3AFbEO2Q
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDk2MDcyMjgsInVzZXJfaWQiOjJ9.mF5Fl64Axf0n5YejjmyvkOPmBmzvGpSOzr-n_7l7eEY
 
 {
     "name": "Stella Afrika",
     "description": "A web conference for web3 people",
-    "location_address": "Victoria Island",
-    "location_venue": "Zonetech Park",
-    "capacity":60,
-    "event_date": "2025-01-01"
+    "location_address": "Lekii",
+    "location_venue": "Cafe Ones",
+    "capacity":90,
+    "event_date": "2025-01-01T15:30:00.000Z"
  
 }   

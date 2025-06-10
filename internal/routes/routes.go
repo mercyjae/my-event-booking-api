@@ -9,18 +9,19 @@ import (
 )
 
 func UserRoutes(r *gin.Engine) {
-	r.GET("/", func(c *gin.Context) {
-		c.String(http.StatusOK, "Welcome to my first golang app with Gin!")
+	r.GET("/alive", func(c *gin.Context) {
+		c.String(http.StatusOK, "Welcome to my event booking app!")
 	})
 	r.GET("/ping", func(c *gin.Context) {
 		c.JSON(200, gin.H{"message": "pong"})
 	})
 	r.POST("/register", handlers.RegisterUser)
-	//r.POST("/verify-otp", handlers.VerifyOTP)
+	r.POST("/verify-otp", handlers.VerifyOTP)
 	r.POST("/login", handlers.LoginUser)
 	r.POST("/verify-forgot-password", handlers.VerifyForgotPassword)
 	r.POST("/forgot-password", handlers.ForgotPassword)
 	r.POST("/reset-password", handlers.ResetPassword)
+	r.GET("/users", handlers.ListUsers)
 
 	auth := r.Group("/")
 	auth.Use(middlewares.AuthMiddleware())

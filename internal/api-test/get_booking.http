@@ -1,5 +1,5 @@
-GET  http://localhost:8080/bookings
+GET  http://localhost:8070/bookings
 content-type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDkxMTY0NTIsInVzZXJfaWQiOjV9.fpbF-rmYw0-CRneN3nvMwq-I92NNUp7BbBh3AFbEO2Q
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDk1Mzg1OTIsInVzZXJfaWQiOjF9.OXWYY_21GQikJ_ltwpk4sHn8HpAha0wGUpxRARdNQYg
 
 

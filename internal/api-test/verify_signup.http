@@ -1,0 +1,10 @@
+POST  http://localhost:8070/verify-otp
+content-type: application/json
+
+
+
+{
+    "email":"nimat20@yopmail.com",
+    "otp": "981541"
+
+}

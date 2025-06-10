@@ -1,24 +1,24 @@
 package db
 
-import (
-	"log"
+// import (
+// 	"log"
 
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
-)
+// 	"gorm.io/driver/postgres"
+// 	"gorm.io/gorm"
+// )
 
-var DB *gorm.DB
+//var DB *gorm.DB
 
-func ConnectDatabase() {
+// func ConnectDatabase() {
 
-	dsn := "host=localhost user=mac dbname=eventdb port=5432 sslmode=disable"
+// 	dsn := "host=localhost user=mac dbname=eventdb port=5432 sslmode=disable"
 
-	//"host=localhost user=youruser password=yourpassword dbname=eventdb port=5432 sslmode=disable"
-	database, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
-	if err != nil {
-		log.Fatal("Failed to connect to database: ", err)
-	}
-	DB = database
+// 	//"host=localhost user=youruser password=yourpassword dbname=eventdb port=5432 sslmode=disable"
+// 	database, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+// 	if err != nil {
+// 		log.Fatal("Failed to connect to database: ", err)
+// 	}
+// 	DB = database
 
-	//database.AutoMigrate(&models.RegisterUser{}, &models.Event{}, &models.Booking{}, &models.VerifyOTP{}, &models.ResetPassword{})
-}
+// 	//database.AutoMigrate(&models.RegisterUser{}, &models.Event{}, &models.Booking{}, &models.VerifyOTP{}, &models.ResetPassword{})
+// }

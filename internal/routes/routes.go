@@ -9,8 +9,8 @@ import (
 )
 
 func UserRoutes(r *gin.Engine) {
-	r.GET("/", func(c *gin.Context) {
-		c.String(http.StatusOK, "Welcome to my first golang app with Gin!")
+	r.GET("/alive", func(c *gin.Context) {
+		c.String(http.StatusOK, "Welcome to my event booking app!")
 	})
 	r.GET("/ping", func(c *gin.Context) {
 		c.JSON(200, gin.H{"message": "pong"})

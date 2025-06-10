@@ -1,3 +1,3 @@
-DELETE  http://localhost:8080/booking/1/cancel
+DELETE  http://localhost:8070/booking/1/cancel
 content-type: application/json
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDk2MDkwOTcsInVzZXJfaWQiOjF9.s7lCJhM_1i2MWjKXFxWigqXs2PO1rR-WyB8aT-HFVAI

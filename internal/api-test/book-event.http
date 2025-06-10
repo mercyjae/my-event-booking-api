@@ -1,4 +1,4 @@
-POST  http://localhost:8080/events/5/book
+POST  http://localhost:8070/events/5/book
 content-type: application/json
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDk2MDkwMjcsInVzZXJfaWQiOjF9.vsmlD0TUJsiOQioD-zRkNwrGeK9uoIKttc6dm4EU4O0
 
